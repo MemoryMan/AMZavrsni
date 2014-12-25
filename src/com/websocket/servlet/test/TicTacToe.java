@@ -16,7 +16,7 @@ import javax.websocket.server.ServerEndpoint;
 @ServerEndpoint("/igra")
 public class TicTacToe extends Room{
 
-	private static final List<Room> rooms = new CopyOnWriteArrayList<>();
+	private static final List<Room> rooms = new CopyOnWriteArrayList<Room>();
 	private static final Set<TicTacToe> connections = new CopyOnWriteArraySet<>();
 	Session session;
 	

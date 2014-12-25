@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+button {
+	width: 25px;
+	height: 25px;
+}
+</style>
+<script type="application/javascript">
+	
+	
+	
+        "use strict";
+
+        var Igra = {};
+
+        Igra.socket = null;
+
+        Igra.connect = function(host) {
+            if ('WebSocket' in window) {
+                Igra.socket = new WebSocket(host);
+            } else if ('MozWebSocket' in window) {
+                Igra.socket = new MozWebSocket(host);
+            } else {
+                Console.log('Error: WebSocket is not supported by this browser.');
+                return;
+            }
+
+            Igra.socket.onopen = function () {
+                var elements = document.getElementsByClassName("tttBttn");
+                console.log(typeof elements);
+                console.log(elements.length);
+                for(var i = 0; i < elements.length; i++) {
+                	
+                	var callback = function () {
+                		var x = i % 3;
+                		var y = Math.floor(i / 3);
+                		
+                		var message = x + " " + y;
+	                	elements[i].addEventListener("click", function(){
+	                    	Igra.socket.send(message);
+	                    });
+                	}
+                	
+                	callback();
+                }
+                //elements.forEach(function(entry) {
+                   /* entry*/
+                //});
+            };
+
+            Igra.socket.onclose = function () {
+                document.getElementById('Igra').onkeydown = null;
+                Console.log('Info: WebSocket closed.');
+            };
+
+        };
+
+        Igra.initialize = function() {
+            if (window.location.protocol == 'http:') {
+                Igra.connect('ws://' + window.location.host + '/WebSocketDynamicWebTest/igra');
+            } else {
+                Igra.connect('wss://' + window.location.host + '/WebSocketDynamicWebTest/igra');
+            }
+        };
+
+
+        Igra.initialize();
+
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Remove elements with "noscript" class - <noscript> is not allowed in XHTML
+            var noscripts = document.getElementsByClassName("noscript");
+            for (var i = 0; i < noscripts.length; i++) {
+                noscripts[i].parentNode.removeChild(noscripts[i]);
+            }
+        }, false);
+
+    
+
+	
+</script>
+<title>Tic-Tac-Toe</title>
+</head>
+<body>
+	<div class="red1">
+			<button class="tttBttn"></button>
+			<button class="tttBttn"></button>
+			<button class="tttBttn"></button>
+	</div>
+	<div class="red2">
+			<button class="tttBttn"></button>
+			<button class="tttBttn"></button>
+			<button class="tttBttn"></button>
+	</div>
+	<div class="red3">
+			<button class="tttBttn"></button>
+			<button class="tttBttn"></button>
+			<button class="tttBttn"></button>
+	</div>
+</body>
+</html>
