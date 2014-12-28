@@ -2,17 +2,19 @@ package com.amzavrsni.game.tictactoe;
 
 import javax.websocket.Session;
 
+import org.json.JSONObject;
+
 public class Engine {
 
 	public static String X = "x";
 	public static String O = "o";
 
 	private char[][] field = new char[3][3];
-	private int turn = 0;
 
 	Session player1;
 	Session player2;
-	
+	Session playerOnTurn;
+
 	public char validate() {
 		// Horizontal
 		for (int i = 0; i < 3; i++) {
@@ -45,28 +47,54 @@ public class Engine {
 				field[i][j] = Integer.toString(i * 3 + j).charAt(0);
 			}
 	}
-	
+
 	public char putMark(char mark, int i, int j) {
 		field[i][j] = mark;
 		return validate();
 	}
 
 	public void end() {
-		
+
 	}
-	
+
 	private void start(Session player1, Session player2) {
 		initField();
-		WSHelper.sendMessageToClient(player1, Commands.startGame(turn == 0 ? Engine.X : Engine.O));
-		WSHelper.sendMessageToClient(player2, Commands.startGame(turn == 0 ? Engine.O : Engine.X));
+		WSHelper.sendMessageToClient(player1, Commands.startGame(playerOnTurn == player1 ? Engine.X : Engine.O));
+		WSHelper.sendMessageToClient(player2, Commands.startGame(playerOnTurn == player2 ? Engine.X : Engine.O));
 	}
-	
-	private Engine() {}
-	
+
+	private boolean isValidTurn(Session session) {
+		if (playerOnTurn == session)
+			return true;
+		return false;
+	}
+
+	public void parseMessage(String message, Session session) {
+		try {
+			JSONObject jsonObject = new JSONObject(message);
+			String key = (String) jsonObject.get("code");
+
+			if ("put".equals(key)) {
+				if (isValidTurn(session)) {
+					JSONObject coords = (JSONObject) jsonObject.get("coords");
+					System.out.println("test");
+				} else {
+					WSHelper.sendMessageToClient(session, "Not your turn!");
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private Engine() {
+	}
+
 	public static Engine startNewGameSession(Session player1, Session player2) {
 		Engine engine = new Engine();
 		engine.player1 = player1;
 		engine.player2 = player2;
+		engine.playerOnTurn = player1;
 		engine.start(player1, player2);
 		return engine;
 	}

@@ -13,6 +13,16 @@ function canvasClick(event) {
 		drawO(this, calculateTile(this.relMouseCoords(this, event)))
 	else
 		drawX(this, calculateTile(this.relMouseCoords(this, event)))
+	var testObject = {
+		code : 'put',
+		coords : {
+			x : 1,
+			y : 2
+		}
+	};
+	console.log(JSON.stringify(testObject));
+	socket.send(JSON.stringify(testObject));
+	// socket.send("test");
 }
 
 var canvas = document.getElementById('myCanvas');

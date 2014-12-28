@@ -32,7 +32,9 @@ public class TicTacToe {
 	
 	@OnMessage
 	public void incoming(String message) {
-		System.out.println(message);
+		if (room.engine == null) 
+			return;
+		room.engine.parseMessage(message, session);
 	}
 	
 }

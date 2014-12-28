@@ -20,7 +20,7 @@ public class Commands {
 		return new JSONObject(hm).toString();
 	}
 	
-	public static String nextMove(Integer x, Integer y, String mark) {
+	public static String move(Integer x, Integer y, String mark) {
 		HashMap<String, String> hm = new HashMap<String, String>();
 		hm.put("code", "move");
 		hm.put("x", x.toString());
