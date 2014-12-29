@@ -20,6 +20,12 @@ public class Commands {
 		return new JSONObject(hm).toString();
 	}
 	
+	public static String restartGame() {
+		HashMap<String, String> hm = new HashMap<String, String>();
+		hm.put("code", "restart");
+		return new JSONObject(hm).toString();
+	}
+	
 	public static String move(Integer x, Integer y, String mark) {
 		HashMap<String, String> hm = new HashMap<String, String>();
 		hm.put("code", "move");

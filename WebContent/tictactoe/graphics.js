@@ -1,8 +1,8 @@
-function calculateTile(coords) {
+function calculateTile(coords, noHrTiles, noVrTiles) {
 	calculateTile(coords, false);
 }
 
-function calculateTile(coords, fromMessage) {
+function calculateTile(coords, noHrTiles, noVrTiles, fromMessage) {
 	var hrStep = canvas.width / noVrTiles;
 	var vrStep = canvas.height / noHrTiles;
 

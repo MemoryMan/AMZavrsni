@@ -1,5 +1,7 @@
 package com.amzavrsni.game.tictactoe;
 
+import java.io.IOException;
+
 import javax.websocket.Session;
 
 import org.json.JSONObject;
@@ -74,8 +76,24 @@ public class Engine {
 		
 	}
 	
-	public void end() {
-
+	public synchronized void stop(Session session) {
+		Session toPlayer = session == player1 ? player2 : player1;
+		if (!toPlayer.isOpen()) {
+			try {
+				toPlayer.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return;
+		}
+		WSHelper.sendMessageToClient(toPlayer, Commands.simpleJsonTextMessage("Opponent has left\nthe game!"));
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		Room.addToAvailableRoom(toPlayer);
+		WSHelper.sendMessageToClient(toPlayer, Commands.restartGame());
 	}
 
 	private void start(Session player1, Session player2) {

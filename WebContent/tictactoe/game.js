@@ -9,15 +9,16 @@ function relMouseCoords(canvas, evt) {
 HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
 
 function canvasClick(event) {
-	var tile = calculateTile(this.relMouseCoords(this, event));
-	var testObject = {
+	var tile = calculateTile(this.relMouseCoords(this, event),
+			canvas.noHrTiles, canvas.noVrTiles);
+	var putMark = {
 		code : 'put',
 		coords : {
 			x : tile.x,
 			y : tile.y
 		}
 	};
-	socket.send(JSON.stringify(testObject));
+	socket.send(JSON.stringify(putMark));
 }
 
 var canvas = document.getElementById('myCanvas');
@@ -30,17 +31,24 @@ messageParser.parse = function(message) {
 		var mark = obj.mark;
 		if (mark === 'x') {
 			console.log('drawing X');
-			drawX(canvas, calculateTile(obj.coords, true));
+			drawX(canvas, calculateTile(obj.coords, canvas.noHrTiles,
+					canvas.noVrTiles, true));
 		} else {
 			console.log('drawing O');
-			drawO(canvas, calculateTile(obj.coords, true));
+			drawO(canvas, calculateTile(obj.coords, canvas.noHrTiles,
+					canvas.noVrTiles, true));
 		}
 		break;
-	
+
 	case 'start':
-		startPopup.hide();
-		var gameStartPopup = new PopupBox(canvas, "You're playing as " + obj.mark, 750);
+		Game.startPopup.hide();
+		var gameStartPopup = new PopupBox(canvas, "You're playing as "
+				+ obj.mark, 750);
 		gameStartPopup.show();
+		break;
+
+	case 'restart':
+		Game.init(3, 3);
 		break;
 		
 	case 'msg':
@@ -50,15 +58,19 @@ messageParser.parse = function(message) {
 	}
 }
 
-// Init game
-canvas.width = 640;
-canvas.height = 640;
-var noHrTiles = 3;
-var noVrTiles = 3;
+var Game = {}
+Game.init = function(noHrTiles, noVrTiles) {
+	canvas.noHrTiles = noHrTiles;
+	canvas.noVrTiles = noVrTiles;
+	// Init game
+	canvas.width = 640;
+	canvas.height = 640;
+	drawGrid(canvas, noHrTiles, noVrTiles);
+	this.startPopup = new PopupBox(canvas, "Waiting for opponent", 0);
+	this.startPopup.show();
+}
 
-drawGrid(canvas, noHrTiles, noVrTiles);
-startPopup = new PopupBox(canvas, "Waiting for opponent", 0);
-startPopup.show();
+Game.init(3, 3);
 
 // WebSocket
 var host = 'ws://' + window.location.host + '/AMZavrsni/tictactoe/ws';

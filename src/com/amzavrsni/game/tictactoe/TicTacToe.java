@@ -17,12 +17,13 @@ public class TicTacToe {
 	public void start(Session session) {
 		this.session = session;
 		this.room = Room.addToAvailableRoom(session);
-		System.out.println("Open");
+		System.out.println("Opened session " + session.getId());
 	}
 
 	@OnClose
-	public void close() {
-		System.out.println("Closed");
+	public void close(Session session) {
+		System.out.println("Closing session " + session.getId());
+		this.room.engine.stop(session);
 	}
 	
 	@OnError
@@ -32,6 +33,7 @@ public class TicTacToe {
 	
 	@OnMessage
 	public void incoming(String message) {
+		System.out.println("Msg " + session.getId() + ": " + message);
 		if (room.engine == null) 
 			return;
 		room.engine.parseMessage(message, session);

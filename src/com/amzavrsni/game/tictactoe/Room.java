@@ -33,10 +33,12 @@ public class Room {
 		synchronized (rooms) {
 			Room room = rooms.get(rooms.size() - 1);
 			if (room.isFull()) {
+				System.out.println("Creating new room...");
 				room = new Room();
 				rooms.add(room);
 			}
 			try {
+				System.out.println("Adding player to room...");
 				room.addPlayer(session);
 			} catch (IOException e) {
 				e.printStackTrace();
