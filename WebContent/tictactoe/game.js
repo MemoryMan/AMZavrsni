@@ -9,23 +9,46 @@ function relMouseCoords(canvas, evt) {
 HTMLCanvasElement.prototype.relMouseCoords = relMouseCoords;
 
 function canvasClick(event) {
-	if (Math.floor(Math.random() * 2) + 1 == 1)
-		drawO(this, calculateTile(this.relMouseCoords(this, event)))
-	else
-		drawX(this, calculateTile(this.relMouseCoords(this, event)))
+	var tile = calculateTile(this.relMouseCoords(this, event));
 	var testObject = {
 		code : 'put',
 		coords : {
-			x : 1,
-			y : 2
+			x : tile.x,
+			y : tile.y
 		}
 	};
-	console.log(JSON.stringify(testObject));
 	socket.send(JSON.stringify(testObject));
-	// socket.send("test");
 }
 
 var canvas = document.getElementById('myCanvas');
+
+var messageParser = {};
+messageParser.parse = function(message) {
+	var obj = JSON.parse(message);
+	switch (obj.code) {
+	case 'put':
+		var mark = obj.mark;
+		if (mark === 'x') {
+			console.log('drawing X');
+			drawX(canvas, calculateTile(obj.coords, true));
+		} else {
+			console.log('drawing O');
+			drawO(canvas, calculateTile(obj.coords, true));
+		}
+		break;
+	
+	case 'start':
+		startPopup.hide();
+		var gameStartPopup = new PopupBox(canvas, "You're playing as " + obj.mark, 750);
+		gameStartPopup.show();
+		break;
+		
+	case 'msg':
+		var textPopup = new PopupBox(canvas, obj.text, 750);
+		textPopup.show();
+		break;
+	}
+}
 
 // Init game
 canvas.width = 640;
@@ -34,8 +57,8 @@ var noHrTiles = 3;
 var noVrTiles = 3;
 
 drawGrid(canvas, noHrTiles, noVrTiles);
-
-canvas.addEventListener("click", canvasClick);
+startPopup = new PopupBox(canvas, "Waiting for opponent", 0);
+startPopup.show();
 
 // WebSocket
 var host = 'ws://' + window.location.host + '/AMZavrsni/tictactoe/ws';
@@ -56,5 +79,6 @@ socket.onclose = function() {
 };
 
 socket.onmessage = function(message) {
-	console.log(message.data);
+	console.log('Message: ' + message.data);
+	messageParser.parse(message.data);
 };

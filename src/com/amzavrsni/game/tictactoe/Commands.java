@@ -9,7 +9,7 @@ public class Commands {
 	public static String simpleJsonTextMessage(String message) {
 		HashMap<String, String> hm = new HashMap<String, String>();
 		hm.put("code", "msg");
-		hm.put("message", message);
+		hm.put("text", message);
 		return new JSONObject(hm).toString();
 	}
 

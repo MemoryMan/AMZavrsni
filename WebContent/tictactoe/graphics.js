@@ -1,10 +1,18 @@
+function calculateTile(coords) {
+	calculateTile(coords, false);
+}
 
-function calculateTile(cords) {
+function calculateTile(coords, fromMessage) {
 	var hrStep = canvas.width / noVrTiles;
 	var vrStep = canvas.height / noHrTiles;
 
-	var hrTileCord = Math.floor(cords.x / hrStep);
-	var vrTileCord = Math.floor(cords.y / vrStep);
+	if (!fromMessage) {
+		var hrTileCord = Math.floor(coords.x / hrStep);
+		var vrTileCord = Math.floor(coords.y / vrStep);
+	} else {
+		var hrTileCord = coords.x;
+		var vrTileCord = coords.y;
+	}
 
 	return {
 		x : hrTileCord,
@@ -16,23 +24,24 @@ function calculateTile(cords) {
 	};
 }
 
-function drawX(canvas, cords) {
+function drawX(canvas, coords) {
 	var ctx = canvas.getContext('2d');
 	ctx.beginPath();
-	ctx.moveTo(cords.xStart + 20, cords.yStart + 20);
-	ctx.lineTo(cords.xEnd - 20, cords.yEnd - 20);
-	ctx.moveTo(cords.xStart + 20, cords.yEnd - 20);
-	ctx.lineTo(cords.xEnd - 20, cords.yStart + 20);
+	ctx.moveTo(coords.xStart + 20, coords.yStart + 20);
+	ctx.lineTo(coords.xEnd - 20, coords.yEnd - 20);
+	ctx.moveTo(coords.xStart + 20, coords.yEnd - 20);
+	ctx.lineTo(coords.xEnd - 20, coords.yStart + 20);
 	ctx.lineWidth = 5;
 	ctx.strokeStyle = '#5380D4';
 	ctx.stroke();
 }
 
-function drawO(canvas, cords) {
+function drawO(canvas, coords) {
 	var ctx = canvas.getContext('2d');
 	ctx.beginPath();
-	ctx.arc((cords.xStart + cords.xEnd) / 2, (cords.yStart + cords.yEnd) / 2,
-			cords.yEnd - (cords.yStart + cords.yEnd) / 2 - 20, 0, 2 * Math.PI,
+	ctx.arc((coords.xStart + coords.xEnd) / 2,
+			(coords.yStart + coords.yEnd) / 2, coords.yEnd
+					- (coords.yStart + coords.yEnd) / 2 - 20, 0, 2 * Math.PI,
 			false);
 	ctx.lineWidth = 5;
 	ctx.strokeStyle = '#FA021B';
@@ -73,29 +82,45 @@ function getScaledFont(canvas) {
 	return 'bold ' + canvas.width / 10 + 'px Arial ';
 }
 
-function popupMesage(canvas, message) {
-	popupMessage(canvas, message, 750);
+function PopupBox(canvas, text, timeout) {
+	this.canvas = canvas;
+	this.ctx = canvas.getContext('2d');
+	this.imgData = null;
+	this.timeout = timeout;
+
+	this.draw = function() {
+		var ctx = this.ctx;
+		ctx.beginPath();
+		ctx.rect(0, canvas.height / 3, canvas.width, canvas.height / 3);
+		ctx.fillStyle = 'white';
+		ctx.fill();
+		ctx.strokeStyle = 'black';
+		ctx.stroke();
+
+		ctx.font = getScaledFont(canvas);
+		ctx.textAlign = 'center';
+		ctx.fillStyle = 'black';
+		ctx.fillText(text, canvas.width / 2, canvas.height / 3 + canvas.height
+				/ 5.8);
+	}
+
 }
 
-function popupMessage(canvas, message, timeout) {
-	canvas.removeEventListener("click", canvasClick);
-	var ctx = canvas.getContext('2d');
-	var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-	ctx.beginPath();
-	ctx.rect(0, canvas.height / 3, canvas.width, canvas.height / 3);
-	ctx.fillStyle = 'white';
-	ctx.fill();
-	ctx.strokeStyle = 'black';
-	ctx.stroke();
+PopupBox.prototype.hide = function() {
+	if (this.imgData != null) {
+		this.ctx.putImageData(this.imgData, 0, 0);
+		this.canvas.addEventListener("click", canvasClick);
+	}
+}
 
-	ctx.font = getScaledFont(canvas);
-	ctx.textAlign = 'center';
-	ctx.fillStyle = 'black';
-	ctx.fillText(message, canvas.width / 2, canvas.height / 3 + canvas.height
-			/ 5.8);
-
-	setTimeout(function() {
-		ctx.putImageData(imgData, 0, 0);
-		canvas.addEventListener("click", canvasClick);
-	}, timeout);
+PopupBox.prototype.show = function() {
+	var popup = this;
+	this.canvas.removeEventListener("click", canvasClick);
+	this.imgData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+	this.draw();
+	if (this.timeout > 0) {
+		setTimeout(function() {
+			popup.hide();
+		}, this.timeout);
+	}
 }
