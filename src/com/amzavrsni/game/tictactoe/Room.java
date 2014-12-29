@@ -8,10 +8,10 @@ import javax.websocket.Session;
 
 public class Room {
 	private static final List<Room> rooms = new ArrayList<Room>();
-	public Engine engine;
+	public Engine engine = new Engine();
 	private Session player1;
 	private Session player2;
-	
+
 	static {
 		rooms.add(new Room());
 	}
@@ -21,7 +21,7 @@ public class Room {
 			player1 = session;
 		} else {
 			player2 = session;
-			engine = Engine.startNewGameSession(player1, player2);
+			engine.startNewGameSession(player1, player2);
 		}
 	}
 
@@ -31,19 +31,41 @@ public class Room {
 
 	public static Room addToAvailableRoom(Session session) {
 		synchronized (rooms) {
-			Room room = rooms.get(rooms.size() - 1);
+			Room room = null;
+			if (rooms.size() < 1) {
+				room = new Room();
+				rooms.add(room);
+			}
+			
+			room = rooms.get(rooms.size() - 1);
+			
 			if (room.isFull()) {
-				System.out.println("Creating new room...");
+				System.out.println("Creating new room " + room);
 				room = new Room();
 				rooms.add(room);
 			}
 			try {
-				System.out.println("Adding player to room...");
+				System.out.println("Adding player to room " + room);
 				room.addPlayer(session);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			return room;
+		}
+	}
+
+	/**
+	 * @param session
+	 * 
+	 * Don't use. Could cause major drops in performance. Think of another better approach to the problem
+	 * of closing sessions.
+	 */
+	public static void removeRoomBySession(Session session) {
+		for (Room room : rooms) {
+			if (room.player1 == session || room.player2 == session) {
+				rooms.remove(room);
+				break;
+			}
 		}
 	}
 }

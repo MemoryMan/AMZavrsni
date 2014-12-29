@@ -1,7 +1,5 @@
 package com.amzavrsni.game.tictactoe;
 
-import java.io.IOException;
-
 import javax.websocket.Session;
 
 import org.json.JSONObject;
@@ -77,23 +75,23 @@ public class Engine {
 	}
 	
 	public synchronized void stop(Session session) {
-		Session toPlayer = session == player1 ? player2 : player1;
-		if (!toPlayer.isOpen()) {
-			try {
-				toPlayer.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		// FIXME Check this
+		
+		// Checks if game has been started
+		if (player1 == null) {
+			Room.removeRoomBySession(session);
 			return;
-		}
-		WSHelper.sendMessageToClient(toPlayer, Commands.simpleJsonTextMessage("Opponent has left\nthe game!"));
+		} 
+		Session remainingPlayer = session == player1 ? player2 : player1;		
+		
+		WSHelper.sendMessageToClient(remainingPlayer, Commands.simpleJsonTextMessage("Opponent has left\nthe game!"));
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		Room.addToAvailableRoom(toPlayer);
-		WSHelper.sendMessageToClient(toPlayer, Commands.restartGame());
+		Room.addToAvailableRoom(remainingPlayer);
+		WSHelper.sendMessageToClient(remainingPlayer, Commands.restartGame());
 	}
 
 	private void start(Session player1, Session player2) {
@@ -177,16 +175,12 @@ public class Engine {
 		}
 	}
 
-	private Engine() {
-	}
 
-	public static Engine startNewGameSession(Session player1, Session player2) {
-		Engine engine = new Engine();
-		engine.player1 = player1;
-		engine.player2 = player2;
-		engine.playerOnTurn = player1;
-		engine.firstTurn = player1;
-		engine.start(player1, player2);
-		return engine;
+	public void startNewGameSession(Session player1, Session player2) {
+		this.player1 = player1;
+		this.player2 = player2;
+		this.playerOnTurn = player1;
+		this.firstTurn = player1;
+		this.start(player1, player2);
 	}
 }
