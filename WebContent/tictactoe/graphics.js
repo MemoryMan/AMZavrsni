@@ -57,7 +57,7 @@ function drawGrid(canvas, noHrTiles, noVrTiles) {
 	var vrStep = canvas.height / noVrTiles;
 
 	var ctx = canvas.getContext('2d');
-
+	ctx.strokeStyle = '#000000';
 	// Horizontal lines
 	for (var i = 0; i < noHrTiles + 1; i++) {
 		ctx.moveTo(x, y);

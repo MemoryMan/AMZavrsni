@@ -11,13 +11,13 @@ public class Engine {
 
 	private char[][] field = new char[3][3];
 
-	Session player1;
-	Session player2;
+	TicTacToe player1;
+	TicTacToe player2;
 	Session firstTurn;
 	Session playerOnTurn;
 
 	boolean isRestarting = false;
-	
+
 	public char validate() {
 		// Horizontal
 		for (int x = 0; x < 3; x++) {
@@ -37,7 +37,7 @@ public class Engine {
 		for (int x = 0; x < 3; x++) {
 			for (int y = 0; y < 3; y++) {
 				if (field[x][y] != X.charAt(0) && field[x][y] != O.charAt(0)) {
-					return 'p';					
+					return 'p';
 				}
 			}
 		}
@@ -56,7 +56,7 @@ public class Engine {
 			return 'i';
 		}
 		field[x][y] = mark;
-		playerOnTurn = playerOnTurn == player1 ? player2 : player1;
+		playerOnTurn = playerOnTurn == player1.session ? player2.session : player1.session;
 		return validate();
 	}
 
@@ -66,42 +66,32 @@ public class Engine {
 			Thread.sleep(2000);
 			sendMessageToAll(Commands.simpleJsonTextMessage("New game"));
 			Thread.sleep(2000);
+			firstTurn = firstTurn == player1.session ? player2.session : player1.session;
 			start(player1, player2);
 			setRestarting(false);
-		} catch (InterruptedException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
-	}
-	
-	public synchronized void stop(Session session) {
-		// FIXME Check this
-		
-		// Checks if game has been started
-		if (player1 == null) {
-			Room.removeRoomBySession(session);
-			return;
-		} 
-		Session remainingPlayer = session == player1 ? player2 : player1;		
-		
-		WSHelper.sendMessageToClient(remainingPlayer, Commands.simpleJsonTextMessage("Opponent has left\nthe game!"));
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		Room.addToAvailableRoom(remainingPlayer);
-		WSHelper.sendMessageToClient(remainingPlayer, Commands.restartGame());
+
 	}
 
-	private void start(Session player1, Session player2) {
+	public synchronized void stop(TicTacToe client) {
+		Room.removeRoom(client.room);
+		TicTacToe remainingPlayer = client == player1 ? player2 : player1;
+		if (TicTacToe.clients.contains(remainingPlayer)) {
+			WSHelper.sendMessageToClient(remainingPlayer, Commands.restartGame());
+		}
+	}
+
+	private void start(TicTacToe player1, TicTacToe player2) {
 		initField();
-		WSHelper.sendMessageToClient(player1, Commands.startGame(firstTurn == player1 ? Engine.X : Engine.O));
-		WSHelper.sendMessageToClient(player2, Commands.startGame(firstTurn == player2 ? Engine.X : Engine.O));
+		WSHelper.sendMessageToClient(player1, Commands.startGame(firstTurn == player1.session ? Engine.X : Engine.O));
+		WSHelper.sendMessageToClient(player2, Commands.startGame(firstTurn == player2.session ? Engine.X : Engine.O));
 	}
 
 	private char getCurrentMark(Session session) {
-		if (firstTurn == player1 && session == player1 || firstTurn == player2 && session == player2)
+		if (firstTurn == player1.session && session == player1.session || firstTurn == player2.session
+				&& session == player2.session)
 			return X.charAt(0);
 		return O.charAt(0);
 	}
@@ -111,7 +101,7 @@ public class Engine {
 			return true;
 		return false;
 	}
-	
+
 	public synchronized boolean isRestarting() {
 		return isRestarting;
 	}
@@ -125,62 +115,61 @@ public class Engine {
 		WSHelper.sendMessageToClient(player2, message);
 	}
 
-	public void parseMessage(String message, Session session) {
+	public void parseMessage(String message, TicTacToe client) {
 		try {
-			if (isRestarting) return;
+			if (isRestarting)
+				return;
 			JSONObject jsonObject = new JSONObject(message);
 			String key = (String) jsonObject.get("code");
 
 			if ("put".equals(key)) {
-				if (isPlayersTurn(session)) {
+				if (isPlayersTurn(client.session)) {
 					JSONObject coords = (JSONObject) jsonObject.get("coords");
 					int x = (Integer) coords.get("x");
 					int y = (Integer) coords.get("y");
-					char currentMark = getCurrentMark(session);
+					char currentMark = getCurrentMark(client.session);
 					char marker = putMark(currentMark, x, y);
 					switch (marker) {
-						case 'i':
-							WSHelper.sendMessageToClient(session, Commands.simpleJsonTextMessage("Invalid move!"));
-							break;
-						case 'p':
-							jsonObject.put("mark", "" + currentMark);
-							sendMessageToAll(jsonObject.toString());
-							break;
-						case 'x':
-						case 'o':
-							jsonObject.put("mark", "" + currentMark);
-							sendMessageToAll(jsonObject.toString());
-							if (session == player1) {
-								WSHelper.sendMessageToClient(player1, Commands.simpleJsonTextMessage("You won"));								
-								WSHelper.sendMessageToClient(player2, Commands.simpleJsonTextMessage("You lose"));								
-							} else {
-								WSHelper.sendMessageToClient(player1, Commands.simpleJsonTextMessage("You lose"));								
-								WSHelper.sendMessageToClient(player2, Commands.simpleJsonTextMessage("You won"));								
-							}
-							restart();
-							break;
-						case 'd':
-							jsonObject.put("mark", "" + currentMark);
-							sendMessageToAll(jsonObject.toString());
-							sendMessageToAll(Commands.simpleJsonTextMessage("Draw"));
-							restart();
+					case 'i':
+						WSHelper.sendMessageToClient(client, Commands.simpleJsonTextMessage("Invalid move!"));
+						break;
+					case 'p':
+						jsonObject.put("mark", "" + currentMark);
+						sendMessageToAll(jsonObject.toString());
+						break;
+					case 'x':
+					case 'o':
+						jsonObject.put("mark", "" + currentMark);
+						sendMessageToAll(jsonObject.toString());
+						if (client == player1) {
+							WSHelper.sendMessageToClient(player1, Commands.simpleJsonTextMessage("You won"));
+							WSHelper.sendMessageToClient(player2, Commands.simpleJsonTextMessage("You lose"));
+						} else {
+							WSHelper.sendMessageToClient(player1, Commands.simpleJsonTextMessage("You lose"));
+							WSHelper.sendMessageToClient(player2, Commands.simpleJsonTextMessage("You won"));
+						}
+						restart();
+						break;
+					case 'd':
+						jsonObject.put("mark", "" + currentMark);
+						sendMessageToAll(jsonObject.toString());
+						sendMessageToAll(Commands.simpleJsonTextMessage("Draw"));
+						restart();
 					}
 				} else {
-					WSHelper.sendMessageToClient(session, Commands.simpleJsonTextMessage("Not your turn!"));
+					WSHelper.sendMessageToClient(client, Commands.simpleJsonTextMessage("Not your turn!"));
 				}
 			}
 		} catch (Exception e) {
-			WSHelper.sendMessageToClient(session, "Invalid message!");
 			e.printStackTrace();
 		}
 	}
 
-
-	public void startNewGameSession(Session player1, Session player2) {
+	public void startNewGameSession(TicTacToe player1, TicTacToe player2) {
 		this.player1 = player1;
 		this.player2 = player2;
-		this.playerOnTurn = player1;
-		this.firstTurn = player1;
+		this.playerOnTurn = player1.session;
+		this.firstTurn = player1.session;
 		this.start(player1, player2);
 	}
 }

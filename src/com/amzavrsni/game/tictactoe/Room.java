@@ -4,23 +4,21 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.websocket.Session;
-
 public class Room {
 	private static final List<Room> rooms = new ArrayList<Room>();
 	public Engine engine = new Engine();
-	private Session player1;
-	private Session player2;
+	private TicTacToe player1;
+	private TicTacToe player2;
 
 	static {
 		rooms.add(new Room());
 	}
 
-	public synchronized void addPlayer(Session session) throws IOException {
+	public synchronized void addPlayer(TicTacToe client) throws IOException {
 		if (player1 == null) {
-			player1 = session;
+			player1 = client;
 		} else {
-			player2 = session;
+			player2 = client;
 			engine.startNewGameSession(player1, player2);
 		}
 	}
@@ -29,7 +27,7 @@ public class Room {
 		return player1 != null && player2 != null;
 	}
 
-	public static Room addToAvailableRoom(Session session) {
+	public static Room addToAvailableRoom(TicTacToe client) {
 		synchronized (rooms) {
 			Room room = null;
 			if (rooms.size() < 1) {
@@ -46,7 +44,7 @@ public class Room {
 			}
 			try {
 				System.out.println("Adding player to room " + room);
-				room.addPlayer(session);
+				room.addPlayer(client);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -54,18 +52,27 @@ public class Room {
 		}
 	}
 
-	/**
-	 * @param session
-	 * 
-	 * Don't use. Could cause major drops in performance. Think of another better approach to the problem
-	 * of closing sessions.
-	 */
-	public static void removeRoomBySession(Session session) {
-		for (Room room : rooms) {
-			if (room.player1 == session || room.player2 == session) {
-				rooms.remove(room);
-				break;
-			}
-		}
+	public synchronized static void removeRoom(Room room) {
+		rooms.remove(room);
 	}
+	
+	public synchronized static boolean roomsContain(Room room) {
+		return rooms.contains(room);
+	}
+
+//	/**
+//	 * @param session
+//	 * 
+//	 * Don't use. Could cause major drops in performance. Think of another better approach to the problem
+//	 * of closing sessions.
+//	 */
+//	public static void removeRoomBySession(Session session) {
+//		for (Room room : rooms) {
+//			if (room.player1 == session || room.player2 == session) {
+//				System.out.println("Removing room " + room);
+//				rooms.remove(room);
+//				break;
+//			}
+//		}
+//	}
 }

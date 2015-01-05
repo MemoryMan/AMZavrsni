@@ -1,17 +1,23 @@
 package com.amzavrsni.game.tictactoe;
 
-import java.io.IOException;
-
-import javax.websocket.Session;
 
 public class WSHelper {
 	
-	public static void sendMessageToClient(Session session, String message) {
-		System.out.println("Sending msg to " + session.getId() + ": " + message);
+	public static void sendMessageToClient(TicTacToe client, String message) {
+		System.out.println("Sending msg to " + client.session.getId() + ": " + message);
 		try {
-			session.getBasicRemote().sendText(message);
-		} catch (IOException e) {
-			e.printStackTrace();
+			synchronized (client.session) {
+				if (client.session.isOpen()) {
+					System.out.println("Session opened: " + client.session.isOpen());
+					client.session.getBasicRemote().sendText(message);
+					
+				}
+				else 
+					System.out.println("Connection already closed");
+			}
+		} catch (Exception e) {
+			System.out.println("Client has been closed");
+			TicTacToe.clear(client);
 		}
 	}
 	
